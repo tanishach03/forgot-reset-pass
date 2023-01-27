@@ -39,15 +39,14 @@ app.post("/forgot-password", (req, res)=>{
         id:user.id
     }
     const token = jwt.sign(payload, secret, {expiresIn:'15m'});
-    const link = `https://localhost:300/reset-password/${user.id}/${token}`;
+    const link = `http://localhost:3000/reset-password/${user.id}/${token}`;
     console.log(link);
     res.send("Password reset link has been sent to the user");
 });
 
-app.get("/reset-password", (req, res)=>{
+app.get("/reset-password/:id/:token", (req, res)=>{
     const {id, token} = req.params;
     
-
     //Check if  this id exists in database 
     if (id!== user.id){
         res.send("Invalid Id");
@@ -56,14 +55,38 @@ app.get("/reset-password", (req, res)=>{
 
     //We have a valid user id, and we have a valid user with this id
     const secret = process.env.JWT_SECRET  +user.password;
-    // try{
-    //     const payload = jwt.verify(token, secret);
-        
-    // }
+    try{
+        const payload = jwt.verify(token, secret);
+        res.render("reset-password", {email: user.email});
+    } catch(error){
+        console.log(error.message);
+        res.send(error.mesaage);
+    }
 });
 
-app.post("/reset-password", (req, res)=>{
+app.post("/reset-password/:id/:token", (req, res)=>{
+    const {id, token} = req.params;
+    const {password, password2} = req.body;
+    
+    //Check if  this id exists in database 
+    if (id!== user.id){
+        res.send("Invalid Id");
+        return 
+    }
 
+    //We have a valid user id, and we have a valid user with this id
+    const secret = process.env.JWT_SECRET  +user.password;
+    try{
+        const payload = jwt.verify(token, secret);
+        //validate if password and password2 match 
+        //we can simply find the user with the payload email and id and finally update with the new password
+    
+        user.password = password;
+        req.send(user);
+    } catch(error){
+        console.log(error.message);
+        res.send(error.mesaage);
+    }
 });
 
 app.listen(3000, function () {
